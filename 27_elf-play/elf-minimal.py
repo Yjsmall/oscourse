@@ -2,7 +2,7 @@ import sys
 
 # This is a minimal ELF executable file
 
-hex_data = '''
+hex_data = """
 457f 464c 0102 0001 0000 0000 0000 0000
 0002 003e 0001 0000 0078 0040 0000 0000
 0040 0000 0000 0000 0000 0000 0000 0000
@@ -11,10 +11,7 @@ hex_data = '''
 0078 0040 0000 0000 0000 0000 0000 0000
 0007 0000 0000 0000 0007 0000 0000 0000
 1000 0000 0000 0000 3c6a 3158 0fff 0005
-'''
+"""
 
-res = b''.join(
-    bytes.fromhex(blk[2:] + blk[:2])
-        for blk in hex_data.split()
-)
+res = b"".join(bytes.fromhex(blk[2:] + blk[:2]) for blk in hex_data.split())
 sys.stdout.buffer.write(res)
