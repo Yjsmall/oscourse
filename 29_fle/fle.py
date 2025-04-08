@@ -20,10 +20,22 @@ from pprint import pprint
 
 CURRENT, RELOC, GLOBL, LOCAL, BYTES = "📍", "❓", "📤", "🏷️", "🔢"
 
-
 def load_fle(file):
+    """
+    Load and parse a FLE file.
+    
+    FLE files are JSON files that may optionally start with a shebang (#!).
+    If a shebang is present, it is stripped before parsing the JSON.
+    
+    Args:
+        file: Path to the FLE file to load
+        
+    Returns:
+        The parsed JSON content as a Python object
+    """
     content = Path(file).read_text()
     if content.startswith("#!"):
+        # Strip shebang line if present
         content = "\n".join(content.splitlines()[1:]).strip()
 
     return json.loads(content)
@@ -172,7 +184,7 @@ def FLE_ld(args):
                             res += reloc
 
     symbols_global = {
-        k: v for k, v in symbols.items() if type(v) == int and "." not in k
+        k: v for k, v in symbols.items() if isinstance(v, int) and "." not in k
     }
 
     parts = [res[i : i + 16] for i in range(0, len(res), 16)]
@@ -267,7 +279,8 @@ def elf_to_fle(binary, section):
             res.append(f"{BYTES}: " + " ".join([f"{x:02x}" for x in holding]))
             holding.clear()
 
-    dump = lambda holding=holding: do_dump(holding)
+    def dump(holding=holding):
+        do_dump(holding)
 
     for i, b in enumerate(section_data):
         for sym in symbols:
@@ -295,44 +308,70 @@ def elf_to_fle(binary, section):
 def FLE_cc(options):
     """
     Parse an ELF .o file and convert it to FLE. Calls gcc for compilation.
+    
+    This function:
+    1. Compiles C code to an ELF object file using gcc with specific flags:
+       - static linking
+       - position independent code
+       - no standard library
+       - freestanding (no OS)
+       - no stack unwinding tables
+       
+    2. Uses objdump to get section information from the ELF file
+    
+    3. For each allocatable section (except GNU properties):
+       - Converts the ELF section to FLE format using elf_to_fle()
+       - Stores the converted sections in a dictionary
+       
+    4. Writes out a FLE object file (.fle) containing:
+       - type: ".obj" to mark it as an object file
+       - All the converted sections from the ELF
     """
 
+    # GCC flags for bare metal compilation
     CFLAGS = [
-        "-static",
-        "-fPIE",
-        "-nostdlib",
-        "-ffreestanding",
-        "-fno-asynchronous-unwind-tables",
+        "-static",        # Static linking
+        "-fPIE",         # Position independent code
+        "-nostdlib",     # No standard library
+        "-ffreestanding", # No OS dependencies  
+        "-fno-asynchronous-unwind-tables", # No stack unwinding
     ]
     gcc_cmd = ["gcc", "-c", *CFLAGS] + options
-    binary = gcc_cmd[gcc_cmd.index("-o") + 1]
+    binary = gcc_cmd[gcc_cmd.index("-o") + 1]  # Get output filename
 
+    # Run gcc to create ELF object file
     subprocess.run(gcc_cmd, check=True)
 
+    # Get section headers from objdump
     lines = list(
         subprocess.check_output(
             ["objdump", "-h", binary],
-            stderr=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL, 
             text=True,
         ).splitlines()
     )
 
     res = {}
 
+    # Parse section headers
     for i, line in enumerate(lines):
+        # Match section header lines like:
+        # "  1 .text         00000123 ..."
         pattern = r"^\s*([0-9]+)\s+(\.(\w|\.)+)\s+([0-9a-fA-F]+)\s+.*$"
         if match := re.match(pattern, line):
             section = match.group(2)
             flags = [x.strip() for x in lines[i + 1].split(",")]
+            # Only process allocatable sections, skip GNU properties
             if "ALLOC" in flags and "note.gnu.property" not in section:
                 res[section] = elf_to_fle(binary, section)
 
+    # Write FLE object file
     Path(binary).with_suffix(".fle").write_text(
         json.dumps(
             {
-                "type": ".obj",
+                "type": ".obj",  # Mark as object file
             }
-            | res,
+            | res,  # Include all converted sections
             ensure_ascii=False,
             indent=4,
         )
