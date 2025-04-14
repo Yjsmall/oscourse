@@ -1,4 +1,4 @@
-#!/home/ubuntu/default/bin/python3
+#!/home/fisher/.venv/bin/python3
 
 # The binary utilities for FLE (Funny Little Executable)
 #
@@ -212,19 +212,25 @@ def elf_to_fle(binary, section):
     """
     Convert an ELF binary's section to FLE JSON format.
     Dirty code (needs revisions).
+
+    binary: e.g. "a.out"
+    section: e.g. ".text"
     """
 
+    # Save binary data of the section
     section_data = subprocess.check_output(
         ["objcopy", "--dump-section", f"{section}=/dev/stdout", binary],
         stderr=subprocess.DEVNULL,
     )
 
+    # Save relocation table
     relocs = subprocess.check_output(
         ["readelf", "-r", binary],
         stderr=subprocess.DEVNULL,
         text=True,
     )
 
+    # Save symbol table
     names = subprocess.check_output(
         ["objdump", "-t", binary],
         stderr=subprocess.DEVNULL,
@@ -235,6 +241,7 @@ def elf_to_fle(binary, section):
 
     symbols = []
     for line in names.splitlines():
+        # e.g.
         pattern = r"^([0-9a-fA-F]+)\s+(l|g)\s+(\w+)?\s+([.a-zA-Z0-9_]+)\s+([0-9a-fA-F]+)\s+(.*)$"
         if match := re.match(pattern, line):
             offset, symb_type, _, sec, _, name = match.groups()
@@ -359,7 +366,7 @@ def FLE_cc(options):
         # "  1 .text         00000123 ..."
         pattern = r"^\s*([0-9]+)\s+(\.(\w|\.)+)\s+([0-9a-fA-F]+)\s+.*$"
         if match := re.match(pattern, line):
-            section = match.group(2)
+            section = match.group(2) # e.g. ".text"
             flags = [x.strip() for x in lines[i + 1].split(",")]
             # Only process allocatable sections, skip GNU properties
             if "ALLOC" in flags and "note.gnu.property" not in section:
