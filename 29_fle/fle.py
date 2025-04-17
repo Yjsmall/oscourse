@@ -1,4 +1,4 @@
-#!/home/fisher/.venv/bin/python3
+#!/usr/bin/env python3
 
 # The binary utilities for FLE (Funny Little Executable)
 #
