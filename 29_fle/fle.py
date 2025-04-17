@@ -386,12 +386,18 @@ def FLE_cc(options):
 
 
 def main():
-    tool = "FLE_" + Path(sys.argv[0]).name
+    if Path(sys.argv[0]).name == "fle.py":
+        tool = "FLE_" + Path(sys.argv[1]).name
+        args = sys.argv[2:]
+    else:
+        tool = "FLE_" + Path(sys.argv[0]).name
+        args = sys.argv[1:]
+
     if tool not in globals():
         print(f"{tool} is not implemented.")
         exit(1)
 
-    globals()[tool](sys.argv[1:])
+    globals()[tool](args)
 
 
 if __name__ == "__main__":

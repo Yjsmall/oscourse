@@ -1,0 +1,71 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "foo",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": [
+                "cc",
+                "-Wall",
+                "-g",
+                "-Os",
+                "./demo/foo.c",
+                "-o",
+                "./demo/foo.o"
+            ]
+        },
+        {
+            "name": "libc",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": [
+                "cc",
+                "-Wall",
+                "-g",
+                "-Os",
+                "./demo/libc.c",
+                "-o",
+                "./demo/libc.o"
+            ]
+        },
+        {
+            "name": "main",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": [
+                "cc",
+                "-Wall",
+                "-g",
+                "-Os",
+                "./demo/main.c",
+                "-o",
+                "./demo/main.o"
+            ]
+        },
+        {
+            "name": "hello-ld",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": [
+                "ld",
+                "./demo/foo.fle",
+                "./demo/libc.fle",
+                "./demo/main.fle",
+                "-o",
+                "./hello"
+            ]
+        },
+    ]
+}
